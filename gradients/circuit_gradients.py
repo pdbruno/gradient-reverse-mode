@@ -1,6 +1,7 @@
 """A class to compute gradients of expectation values."""
 
 from functools import reduce
+from qiskit.quantum_info import Statevector, Operator
 from qiskit.circuit import QuantumCircuit
 from .split_circuit import split
 from .gradient_lookup import analytic_gradient
@@ -9,7 +10,7 @@ from .gradient_lookup import analytic_gradient
 class StateGradient:
     """A class to compute gradients of expectation values."""
 
-    def __init__(self, operator, ansatz, state_in, target_parameters=None):
+    def __init__(self, operator: Operator, ansatz: QuantumCircuit, state_in: Statevector, target_parameters=None):
         """
         Args:
             operator (OperatorBase): The operator in the expectation value.

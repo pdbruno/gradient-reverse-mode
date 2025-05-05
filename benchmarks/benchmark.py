@@ -5,24 +5,24 @@ from multiprocessing import Pool
 import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
-from qiskit.quantum_info import Statevector
-
+from qiskit.quantum_info import Statevector, Operator
+from qiskit.circuit import QuantumCircuit
 from gradients import StateGradient
 
-NUM_PROCESSES = 2
+NUM_PROCESSES = 1
 
 
 class Benchmark:
     """A class to run benchmarks of gradient calculation runtimes."""
 
-    def __init__(self, reps, single_qubit_op, nreps):
+    def __init__(self, reps, single_qubit_op: Operator, nreps):
         self.num_reps = reps
         self.single_qubit_op = single_qubit_op
         self.nreps = nreps
         self.verbose = False
         self.last_run = None
 
-    def run_benchmark(self, library_circuit, target_parameters='all', filename=None):
+    def run_benchmark(self, library_circuit: QuantumCircuit, target_parameters='all', filename=None):
         """Run a single benchmark.
 
         Args:
@@ -55,7 +55,10 @@ class Benchmark:
 
             # get operator and input state of proper size
             num_qubits = library_circuit.num_qubits
-            operator = (self.single_qubit_op ^ num_qubits).to_matrix_op().primitive
+            operator = self.single_qubit_op
+            for i in range(num_qubits - 1):
+                operator = operator.tensor(self.single_qubit_op)
+                
             state_in = Statevector.from_label('0' * num_qubits)
 
             if self.verbose:

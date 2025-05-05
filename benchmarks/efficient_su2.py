@@ -2,7 +2,7 @@
 
 import numpy as np
 from qiskit.circuit.library import EfficientSU2
-from qiskit.opflow import H
+from qiskit.quantum_info import Operator
 from .benchmark import Benchmark
 
 def run_efficientsu2():
@@ -10,7 +10,7 @@ def run_efficientsu2():
     circuit = EfficientSU2(4)
 
     # define the stats for the benchmark
-    benchmark = Benchmark(2 ** np.arange(2, 6), H, 12)
+    benchmark = Benchmark(2 ** np.arange(2, 6), Operator.from_label("H"), 12)
 
     # run 
     benchmark.run_benchmark(circuit)
