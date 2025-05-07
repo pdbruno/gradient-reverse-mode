@@ -1,1 +1,1 @@
-from gradients.circuit_gradients import grad, itgrad
+from quantum_brackpropagation.circuit_gradients import StateGradient

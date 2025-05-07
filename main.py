@@ -5,7 +5,7 @@
 import numpy as np
 from qiskit.quantum_info import Statevector, Operator
 from qiskit.circuit import QuantumCircuit
-from gradients import StateGradient
+from quantum_brackpropagation import StateGradient
 from qiskit.circuit.library import EfficientSU2
 
 circuit = EfficientSU2(2).assign_parameters(np.random.random(16))

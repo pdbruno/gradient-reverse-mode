@@ -1,5 +1,5 @@
 [project]
-name = "gradient-reverse-mode"
+name = "quantum_brackpropagation"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
