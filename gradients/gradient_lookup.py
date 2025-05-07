@@ -85,7 +85,7 @@ def analytic_gradient(circuit, parameter=None):
         coeff = 1
         for i, a in enumerate(product_rule_term):
             coeff *= a[0]
-            summand_circuit.data.append([a[1], *op_context[i]])
+            summand_circuit.append(a[1], *op_context[i])
         gradient += [[coeff, summand_circuit.copy()]]
 
     return gradient

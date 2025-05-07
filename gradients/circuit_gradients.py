@@ -25,11 +25,14 @@ class StateGradient:
         self.target_parameters = target_parameters
 
         if isinstance(ansatz, QuantumCircuit):
+            if type(ansatz) is not QuantumCircuit:
+                self.ansatz = ansatz.decompose()
+
             if target_parameters is None:
-                self.unitaries = split(ansatz)
+                self.unitaries = split(self.ansatz)
                 self.paramlist = None
             else:
-                self.unitaries, self.paramlist = split(ansatz, target_parameters,
+                self.unitaries, self.paramlist = split(self.ansatz, target_parameters,
                                                        separate_parameterized_gates=False,
                                                        return_parameters=True)
         elif isinstance(ansatz, list):
