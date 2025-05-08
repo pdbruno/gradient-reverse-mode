@@ -67,9 +67,6 @@ def analytic_gradient(circuit, parameter=None):
         if parameter not in circuit.parameters:
             raise ValueError('Parameter not in this circuit.')
 
-        if len(circuit._parameter_table[parameter]) > 1:
-            raise NotImplementedError('No product rule support yet, params must be unique.')
-
     summands, op_context = [], []
     for i, op in enumerate(circuit.data):
         gate = op[0]

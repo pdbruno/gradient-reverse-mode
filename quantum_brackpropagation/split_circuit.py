@@ -47,12 +47,12 @@ def split(circuit, parameters='all',
                 circuits.append(sub)
                 sub = QuantumCircuit(*circuit.qregs, *circuit.cregs)
 
-            sub.data += [op]
+            sub.append(op)
             circuits.append(sub)
             corresponding_parameters.append(params)
             sub = QuantumCircuit(*circuit.qregs, *circuit.cregs)
         else:
-            sub.data += [op]
+            sub.append(op)
 
     if len(sub.data) > 0:  # handle leftover gates
         if separate_parameterized_gates or len(circuits) == 0:
