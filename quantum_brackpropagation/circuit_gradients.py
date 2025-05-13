@@ -103,6 +103,7 @@ class StateGradient:
 
         phi = init.evolve(ansatz)
         lam = phi.evolve(op)
+        e = phi.expectation_value(op)
         grads = []
         for j in reversed(range(num_parameters)):
             uj = ulist[j]
@@ -129,9 +130,9 @@ class StateGradient:
         accumulated, unique_params = self._accumulate_product_rule(
             list(reversed(grads)))
         if return_parameters:
-            return accumulated, unique_params
+            return e, accumulated, unique_params
 
-        return accumulated
+        return e, accumulated
 
     def _accumulate_product_rule(self, gradients):
         grads = {}
