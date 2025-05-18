@@ -1,9 +1,9 @@
 from qiskit.circuit import QuantumCircuit, ParameterExpression, Parameter
+from typing import List, Tuple
 
 
-def split(circuit, parameters='all',
-          separate_parameterized_gates=False,
-          return_parameters=False):
+def split(circuit, parameters: str | Parameter | List[Parameter] = 'all',
+          separate_parameterized_gates=False) -> Tuple[List[QuantumCircuit], List[List[Parameter]]]:
     """Split the circuit at ParameterExpressions.
 
     Args:
@@ -14,7 +14,7 @@ def split(circuit, parameters='all',
     Returns:
         A list of the split circuits.
     """
-    circuits = []
+    circuits: List[QuantumCircuit] = []
     corresponding_parameters = []
 
     sub = QuantumCircuit(*circuit.qregs, *circuit.cregs)
@@ -61,6 +61,4 @@ def split(circuit, parameters='all',
         else:
             circuits[-1].compose(sub, inplace=True)  # or attach to last
 
-    if return_parameters:
-        return circuits, corresponding_parameters
-    return circuits
+    return circuits, corresponding_parameters

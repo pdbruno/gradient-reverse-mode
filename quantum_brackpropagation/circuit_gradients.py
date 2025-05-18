@@ -1,45 +1,30 @@
 """A class to compute gradients of expectation values."""
 
 from functools import reduce
+import concurrent.futures
 from qiskit.quantum_info import Statevector, Operator
-from qiskit.circuit import QuantumCircuit
+from qiskit.circuit import QuantumCircuit, Parameter
 from .split_circuit import split
 from .gradient_lookup import analytic_gradient
+from typing import Union, List, Mapping
 
 
 class StateGradient:
     """A class to compute gradients of expectation values."""
 
-    def __init__(self, operator: Operator, ansatz: QuantumCircuit, state_in: Statevector, target_parameters=None):
+    def __init__(self, operator: Operator, ansatz: QuantumCircuit, state_in: Statevector):
         """
         Args:
             operator (OperatorBase): The operator in the expectation value.
             ansatz (QuantumCircuit): The ansatz in the expecation value.
             state_in (Statevector): The initial, unparameterized state, upon which the ansatz acts.
-            target_parameters (List[Parameter]): The parameters with respect to which to derive.
-                If None, the derivative for all parameters is computed (also bound parameters!).
         """
         self.operator = operator
         self.ansatz = ansatz
         self.state_in = state_in
-        self.target_parameters = target_parameters
 
-        if isinstance(ansatz, QuantumCircuit):
-            if type(ansatz) is not QuantumCircuit:
-                self.ansatz = ansatz.decompose()
-
-            if target_parameters is None:
-                self.unitaries = split(self.ansatz)
-                self.paramlist = None
-            else:
-                self.unitaries, self.paramlist = split(self.ansatz, target_parameters,
-                                                       separate_parameterized_gates=False,
-                                                       return_parameters=True)
-        elif isinstance(ansatz, list):
-            self.unitaries = ansatz
-            self.paramlist = None
-        else:
-            raise NotImplementedError('Unsupported type of ansatz.')
+        self.unitaries, self.paramlist = split(self.ansatz, list(ansatz.parameters),
+                                                    separate_parameterized_gates=False)
 
     def reference_gradients(self, parameter_binds=None, return_parameters=False):
         op, ansatz, init = self.operator, self.ansatz, self.state_in
@@ -85,21 +70,13 @@ class StateGradient:
 
         return accumulated
 
-    def iterative_gradients(self, parameter_binds=None, return_parameters=False):
+    def iterative_gradients_single(self, parameter_binds: Mapping[Parameter, float]):
         op, ansatz, init = self.operator, self.ansatz, self.state_in
 
         ulist, paramlist = self.unitaries, self.paramlist
         num_parameters = len(ulist)
-
-        if paramlist is not None and parameter_binds is None:
-            raise ValueError('If you compute the gradients with respect to a ansatz with free '
-                             'parameters, you must pass a dictionary of parameter binds.')
-
-        if parameter_binds is None:
-            parameter_binds = {}
-            paramlist = [[None]] * num_parameters
-        else:
-            ansatz = _bind(ansatz, parameter_binds)
+        
+        ansatz: QuantumCircuit = _bind(ansatz, parameter_binds) # type: ignore
 
         phi = init.evolve(ansatz)
         lam = phi.evolve(op)
@@ -124,15 +101,36 @@ class StateGradient:
             if j > 0:
                 lam = lam.evolve(uj_dagger)
 
-        if parameter_binds == {}:
-            return list(reversed(grads))
-
         accumulated, unique_params = self._accumulate_product_rule(
             list(reversed(grads)))
-        if return_parameters:
-            return e, accumulated, unique_params
+        
+        
+        return e, [accumulated[unique_params.index(p)] for p in list(parameter_binds.keys())]
 
-        return e, accumulated
+    def iterative_gradients(self, parameter_binds: Mapping[Parameter, List[float]]):
+        expectation_values = []
+        grads = []
+        batch_size = len(next(iter(parameter_binds.values())))
+        if batch_size <= 300:
+            map_func = map
+        else:
+            executor = concurrent.futures.ProcessPoolExecutor()
+            map_func = executor.map
+
+        for e, grad in map_func(self.iterative_gradients_single, 
+                            [{p: parameter_binds[p][i].item() for p in parameter_binds} 
+                                for i in range(batch_size)
+                            ]):
+            expectation_values.append(e)
+            grads.append(grad)
+
+        if batch_size > 300:
+            executor.shutdown(wait=True)
+
+        return expectation_values, grads
+
+
+
 
     def _accumulate_product_rule(self, gradients):
         grads = {}
@@ -145,17 +143,6 @@ class StateGradient:
 
 
 # pylint: disable=inconsistent-return-statements
-def _bind(circuits, parameter_binds, inplace=False):
-    if not isinstance(circuits, list):
-        existing_parameter_binds = {p: parameter_binds[p] for p in circuits.parameters}
-        return circuits.assign_parameters(existing_parameter_binds, inplace=inplace)
-
-    bound = []
-    for circuit in circuits:
-        existing_parameter_binds = {
-            p: parameter_binds[p] for p in circuit.parameters}
-        bound.append(circuit.assign_parameters(
-            existing_parameter_binds, inplace=inplace))
-
-    if not inplace:
-        return bound
+def _bind(circuits: QuantumCircuit, parameter_binds: Mapping[Parameter, float], inplace=False):
+    existing_parameter_binds = {p: parameter_binds[p] for p in circuits.parameters}
+    return circuits.assign_parameters(existing_parameter_binds, inplace=inplace)
