@@ -1,2 +1,3 @@
 # from .circuit_gradients import itgrad, grad
-from .circuit_gradients import StateGradient
+from .backpropagation_state_gradient import BackpropagationStateGradient
+from .symbolic_state_gradient import SymbolicStateGradient

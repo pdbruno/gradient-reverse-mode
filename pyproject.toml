@@ -1,5 +1,5 @@
 [project]
-name = "quantum_brackpropagation"
+name = "quantum_circuit_gradients"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -9,5 +9,6 @@ dependencies = [
     "numpy",
     "scipy",
     "ddt",
-    "matplotlib"
+    "matplotlib",
+    "qiskit-symb"
 ]

@@ -1,1 +1,2 @@
-from quantum_brackpropagation.circuit_gradients import StateGradient
+from quantum_brackpropagation.backpropagation_state_gradient import BackpropagationStateGradient
+from quantum_brackpropagation.symbolic_state_gradient import SymbolicStateGradient
