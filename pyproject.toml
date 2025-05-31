@@ -1,5 +1,5 @@
 [project]
-name = "quantum_circuit_gradients"
+name = "quantum-circuit-gradients"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
