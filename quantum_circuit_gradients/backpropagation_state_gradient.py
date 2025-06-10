@@ -51,8 +51,10 @@ class BackpropagationStateGradient:
                 phi = phi.evolve(uj_dagger)
 
                 # TODO use projection
-                grad = 2 * sum(coeff * lam.conjugate().data.dot(phi.evolve(gate).data)
-                            for coeff, gate in deriv).real
+                grad = 0
+                for coeff, gate in deriv:
+                    grad += coeff * lam.conjugate().data.dot(phi.evolve(gate).data)
+                grad = (2 * grad).real
                 grads += [grad]
 
                 if j > 0:
