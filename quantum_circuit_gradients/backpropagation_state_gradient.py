@@ -37,7 +37,7 @@ class BackpropagationStateGradient:
         e = phi.expectation_value(op)
         in_training_loop = (os.environ.get("ESTADO_GLOBAL_EN_ENTRENAMIENTO", "True") == "True")
         if in_training_loop:
-            print(" Calculo del gradiente analitico")
+            #print(" Calculo del gradiente analitico")
             grads = []
             for j in reversed(range(num_parameters)):
                 uj = ulist[j]
