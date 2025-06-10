@@ -529,7 +529,7 @@ wheels = [
 ]
 
 [[package]]
-name = "quantum-brackpropagation"
+name = "quantum-circuit-gradients"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
