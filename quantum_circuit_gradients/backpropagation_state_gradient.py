@@ -23,6 +23,7 @@ class BackpropagationStateGradient:
 
         self.unitaries, self.paramlist = split(self.ansatz, list(ansatz.parameters),
                                                separate_parameterized_gates=False)
+        
 
     def gradients_single(self, parameter_binds: NDArray):
         op, ansatz = self.operator, self.ansatz
@@ -68,13 +69,6 @@ class BackpropagationStateGradient:
     def gradients(self, parameter_binds: NDArray):
         expectation_values = []
         grads = []
-        #batch_size = len(parameter_binds)
-        #if batch_size <= 300:
-        #    map_func = map
-        #else:
-        #    print("multiprocesando")
-        #    executor = concurrent.futures.ProcessPoolExecutor(max_workers=5)
-        #    map_func = executor.map
         map_func = map
         for e, grad in map_func(self.gradients_single, parameter_binds):
             expectation_values.append(e)
@@ -82,10 +76,6 @@ class BackpropagationStateGradient:
                 grads.append(grad)
         if len(grads) == 0:
             grads = None
-
-        #if batch_size > 300:
-        #    executor.shutdown(wait=True)
-        
         return expectation_values, grads
 
     def _accumulate_product_rule(self, gradients):
