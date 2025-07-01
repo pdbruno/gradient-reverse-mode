@@ -10,5 +10,6 @@ dependencies = [
     "scipy",
     "ddt",
     "matplotlib",
-    "qiskit-symb"
+    "qiskit-symb",
+    "numba>=0.61.2",
 ]

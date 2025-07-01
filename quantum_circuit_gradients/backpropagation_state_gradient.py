@@ -6,6 +6,7 @@ from qiskit.circuit import QuantumCircuit
 from .split_circuit import split
 from .gradient_lookup import analytic_gradient
 from numpy.typing import NDArray
+from numba import njit
 import os
 
 class BackpropagationStateGradient:
@@ -34,8 +35,10 @@ class BackpropagationStateGradient:
         ansatz: QuantumCircuit = self._bind(ansatz, parameter_binds)  # type: ignore
 
         phi = Statevector.from_label("0"*ansatz.num_qubits).evolve(ansatz)
-        lam = phi.evolve(op)
+        
         e = phi.expectation_value(op)
+
+        lam = phi.evolve(op)
         in_training_loop = (os.environ.get("ESTADO_GLOBAL_EN_ENTRENAMIENTO", "True") == "True")
         if in_training_loop:
             #print(" Calculo del gradiente analitico")
@@ -51,13 +54,12 @@ class BackpropagationStateGradient:
 
                 phi = phi.evolve(uj_dagger)
 
-                # TODO use projection
-                grad = 0
-                for coeff, gate in deriv:
-                    grad += coeff * lam.conjugate().data.dot(phi.evolve(gate).data)
-                grad = (2 * grad).real
+                lam_np_probabilities = lam.probabilities()
+                phi_np_probabilities = phi.probabilities()
+                coeficientes = [batch[0] for batch in deriv]
+                operadores = [batch[1] for batch in deriv]
+                grad = self.prueba_numba(lam_np_probabilities, phi_np_probabilities, coeficientes, operadores)
                 grads += [grad]
-
                 if j > 0:
                     lam = lam.evolve(uj_dagger)
 
@@ -91,3 +93,14 @@ class BackpropagationStateGradient:
     def _bind(self, circuit: QuantumCircuit, parameter_binds: NDArray, inplace=False):
         parameter_indexes = [self.ansatz.parameters.data.index(p) for p in circuit.parameters]
         return circuit.assign_parameters(parameter_binds[parameter_indexes], inplace=inplace)
+
+    @staticmethod
+    @njit(nopython=True)
+    def prueba_numba(lam, phi, deriv):
+        grad = 0
+        for coeff, gate in deriv:
+            grad += coeff * lam.conjugate().data.dot(phi.evolve(gate).data)
+        grad = (2 * grad).real
+        return grad
+    
+
