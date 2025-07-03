@@ -8,6 +8,7 @@ from .gradient_lookup import analytic_gradient
 from numpy.typing import NDArray
 from numba import njit
 import os
+import numpy as np
 
 class BackpropagationStateGradient:
     """A class to compute gradients of expectation values."""
@@ -51,14 +52,13 @@ class BackpropagationStateGradient:
                     self._bind(gate, parameter_binds, inplace=True)
 
                 uj_dagger = self._bind(uj, parameter_binds).inverse()
-
                 phi = phi.evolve(uj_dagger)
-
-                lam_np_probabilities = lam.probabilities()
-                phi_np_probabilities = phi.probabilities()
-                coeficientes = [batch[0] for batch in deriv]
-                operadores = [batch[1] for batch in deriv]
-                grad = self.prueba_numba(lam_np_probabilities, phi_np_probabilities, coeficientes, operadores)
+                #preproccess numba
+                lam_np_probabilities = lam.probabilities().astype(np.complex64)
+                phi_np_probabilities = phi.probabilities().astype(np.complex64)
+                coefficients = [batch[0] for batch in deriv]
+                matrices = [Operator(batch[1])._data.astype(np.complex64) for batch in deriv]
+                grad = self.prueba_numba(lam_np_probabilities, phi_np_probabilities, matrices, coefficients)
                 grads += [grad]
                 if j > 0:
                     lam = lam.evolve(uj_dagger)
@@ -96,10 +96,12 @@ class BackpropagationStateGradient:
 
     @staticmethod
     @njit(nopython=True)
-    def prueba_numba(lam, phi, deriv):
+    def prueba_numba(lam: NDArray, phi: NDArray, matrices: [NDArray], coefficients: [complex]):
         grad = 0
-        for coeff, gate in deriv:
-            grad += coeff * lam.conjugate().data.dot(phi.evolve(gate).data)
+        for coeff, matrix in zip(coefficients, matrices):
+            lam_conjugate = np.conjugate(lam)
+            phi_evolved = matrix.dot(phi)
+            grad += coeff * lam_conjugate.dot(phi_evolved)
         grad = (2 * grad).real
         return grad
     
