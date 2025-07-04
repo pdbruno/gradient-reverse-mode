@@ -78,7 +78,7 @@ class BackpropagationStateGradient:
                 grads.append(grad)
         if len(grads) == 0:
             grads = None
-        print(expectation_values)
+        #print(expectation_values)
         return expectation_values, grads
 
     def _accumulate_product_rule(self, gradients):
