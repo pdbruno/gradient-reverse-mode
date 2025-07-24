@@ -10,7 +10,7 @@ def gradient_lookup(gate):
     """Returns a circuit implementing the gradient of the input gate."""
 
     param: ParameterExpression = gate.params[0]
-    param_derivative = param.gradient(list(param.parameters)[0])
+    param_derivative = param.gradient(list(param.parameters)[0]) if isinstance(param, ParameterExpression) else 1
     if isinstance(gate, RXGate):
         derivative = QuantumCircuit(gate.num_qubits)
         derivative.rx(param, 0)

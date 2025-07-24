@@ -22,7 +22,7 @@ class BackpropagationStateGradient:
         self.ansatz = ansatz
 
         self.unitaries, self.paramlist = split(self.ansatz, list(ansatz.parameters),
-                                               separate_parameterized_gates=False)
+                                               separate_parameterized_gates=True)
 
     def gradients_single(self, parameter_binds: NDArray):
         #parameter_binds.shape == 2 * entity_embedding_dim + relation_embedding_dim. Es un batch concatenado
@@ -35,7 +35,7 @@ class BackpropagationStateGradient:
         ansatz: QuantumCircuit = self._bind(ansatz, parameter_binds)  # type: ignore
 
         phi = Statevector.from_label("0"*ansatz.num_qubits).evolve(ansatz)
-        e = phi.expectation_value(op)
+        e = phi.expectation_value(op).real
         lam = phi.evolve(op)
         in_training_loop = (os.environ.get("ESTADO_GLOBAL_EN_ENTRENAMIENTO", "True") == "True")
         if in_training_loop:
@@ -44,7 +44,7 @@ class BackpropagationStateGradient:
             for j in reversed(range(num_parameters)):
                 uj = ulist[j]
 
-                deriv = analytic_gradient(uj, paramlist[j][0])
+                deriv = analytic_gradient(uj, paramlist[j][0] if len(paramlist[j]) == 1 else None)
                 for _, gate in deriv:
                     self._bind(gate, parameter_binds, inplace=True)
 
@@ -85,6 +85,8 @@ class BackpropagationStateGradient:
         grads = {}
         for paramlist, grad in zip(self.paramlist, gradients):
             # all our gates only have one single parameter
+            if len(paramlist) == 0:
+                continue
             param = paramlist[0]
             grads[param] = grads.get(param, 0) + grad
 
